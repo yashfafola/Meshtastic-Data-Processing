@@ -56,7 +56,6 @@ class App(tkinter.Tk):
         # initialdir=defaultSys
         fpath = filedialog.askopenfilenames(title="Select file", 
                 filetypes=(("text files", "*.txt"), ("all files", "*.*")))
-        print(len(fpath))
 
     def processSerialLogs(self, fpath):
         # open file containing logs
@@ -65,59 +64,48 @@ class App(tkinter.Tk):
         logFile.close()
         print("File length is: " + str(len(rawLogs)) + " lines")
         append_count = 0
+        dc = 0
         for f in range(len(rawLogs)):
             log_lines.append(re.sub(",", "", rawLogs[f]))
-            s1 = re.search("(.*) msg=(.*)", log_lines[f])
-            if s1:
-                #num.append(re.sub(r'\D', "", s1.group(1)))
-                tempstr = s1.group(1)
-                textmsg.append(s1.group(2))
-                #s2 =  re.search(" ", tempstr)
-                #print("Spaces ", tempstr.count(" "))    # number of spaces can be 6 or 7
-                #num = re.search("^(.*) ", tempstr)
-                #rxtime.append(tempstr[:tempstr.find(" ")])
-                word_list = log_lines[f].split()
-                for w in range(len(word_list)):
-                    fromfind = re.search("(.*)from=(.*)", word_list[w])
-                    idfind = re.search("(.*)id=(.*)", word_list[w])
-                    if fromfind:
-                        sender.append(int(fromfind.group(2), 0))
-                    if idfind:
-                        requestid.append(int(idfind.group(2), 0))
-                whole_line.append(word_list)
-                for f2 in range(12):    # withn above 12th line of detected msg, 
-                                        # all info is is obtained
-                    if f-f2 < 0:
-                        print("Starting lines of serial data don't contain enough info")
-                    else:
-                        s2 = re.search("decoded message", log_lines[f-f2])
-                        s3 = re.search("payloadSize", log_lines[f-f2])
-                        if s2:
-                            # get the data points from a line
-                            sub_wordlist = log_lines[f-f2].replace("(", "").replace(")", "").split()
-                            receiver.append(sub_wordlist[7])
-                            hoplimit.append(int(sub_wordlist[9].replace("HopLim", "")))
-                            channelid.append(int(sub_wordlist[10].replace("Ch", ""), 0))
-                            rxtimestampunix.append(int(sub_wordlist[12].replace("rxtime=", "")))
-                            # "\" operator indicates that the statement is continued in next line
-                            print(rxtimestampunix)
-                            print(append_count)
-                            rxdatetime.append(datetime.datetime.fromtimestamp\
-                                        (rxtimestampunix[append_count], datetime.timezone.utc))
-                            rxSNR.append(float(sub_wordlist[13].replace("rxSNR=", "")))
-                        if s3:
-                            sub_wordlist2 = log_lines[f-f2].replace\
-                                            ("(", "").replace(")", "").replace(",", "").split()
-                            bw.append(int(sub_wordlist2[3].replace("bw=", "")))
-                            sf.append(int(sub_wordlist2[4].replace("sf=", "")))
-                            cr.append(sub_wordlist2[5].replace("cr=", "")) 
-                            symLen.append(int(sub_wordlist2[7].replace("symLen=", "")))
-                            totalpayloadSize.append(int(sub_wordlist2[9].replace("payloadSize=", "")))
-                            airtime.append(int(sub_wordlist2[11]))
-
-                # increament append counter to keep count of added data points
-                append_count += 1
+            pos_msg = rawLogs[f].find("msg=")
+            if pos_msg > 65:
+                # get the data points from a line
+                sub_wordlist = log_lines[f].replace(",", "",2).split()
+                sender.append(sub_wordlist[6].replace("from=", ""))
+                requestid.append(int(sub_wordlist[7].replace("id=", ""), 0))
+                #nlist = " ".join([sub_wordlist[x].replace("msg=", "") for x in range(7, len(sub_wordlist), 1)])
+                textmsg.append(" ".join([sub_wordlist[x].replace("msg=", "") for x in range(8, len(sub_wordlist), 1)]))
                 
+                if f-3 > 0:
+                    sub_wordlist2 = log_lines[f-3].replace("(", "").replace(")", "").split()
+                    receiver.append(sub_wordlist2[7])
+                    hoplimit.append(int(sub_wordlist2[9].replace("HopLim", "")))
+                    channelid.append(int(sub_wordlist2[10].replace("Ch", ""), 0))
+                    rxtimestampunix.append(int(sub_wordlist2[12].replace("rxtime=", "")))
+                    # "\" operator indicates that the statement is continued in next line
+                    print(rxtimestampunix)
+                    print(append_count)
+                    rxdatetime.append(datetime.datetime.fromtimestamp\
+                                (rxtimestampunix[append_count], datetime.timezone.utc))
+                    rxSNR.append(float(sub_wordlist2[13].replace("rxSNR=", "")))
+                else:
+                    print("not enough data lines to get required data points (-3)")
+                if f-10 > 0:
+                    sub_wordlist3 = log_lines[f-10].replace("(", "").replace(")", "").\
+                                    replace(",", "").split()  
+                    bw.append(int(sub_wordlist3[3].replace("bw=", "")))
+                    sf.append(int(sub_wordlist3[4].replace("sf=", "")))
+                    cr.append(sub_wordlist3[5].replace("cr=", "")) 
+                    symLen.append(int(sub_wordlist3[7].replace("symLen=", "")))
+                    totalpayloadSize.append(int(sub_wordlist3[9].replace("payloadSize=", "")))
+                    airtime.append(int(sub_wordlist3[11]))
+                else:
+                    print("not enough data lines to get required data points (-10)")
+                
+                append_count += 1
+            # elif pos_msg < 65 and pos_msg > 50:
+            #     dc += 1       
+        print(append_count)
         header = ['Request ID','Rx Time UTC' , 'Rx Timestamp', 'Sender', 'msg',\
              'Total Payload Size (bytes)', 'Air Time (ms)', 'Hop Limit', 'Channel ID',\
                  'Bandwidth (khZ)', 'Spreading Factor', 'Coding Rate', 'symLen (ms)']
