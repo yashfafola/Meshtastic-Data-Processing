@@ -66,7 +66,7 @@ class App(tkinter.Tk):
 
     def processSerialLogs(self, fpath):
         # open file containing logs
-        logFile = open(fpath[0], mode="r", encoding="utf8", errors="ignore")
+        logFile = open(fpath[0], mode="r", encoding="utf-8", errors="ignore")
         rawLogs = logFile.readlines()
         logFile.close()
         print("File length is: " + str(len(rawLogs)) + " lines")
@@ -98,7 +98,10 @@ class App(tkinter.Tk):
                         # "\" operator indicates that the statement is continued in next line
                         rxdatetime.append(datetime.datetime.fromtimestamp\
                                     (rxtimestampunix[append_count], datetime.timezone.utc))
-                        rxSNR.append(float(sub_wordlist2[13].replace("rxSNR=", "")))
+                        if len(sub_wordlist2) == 14:
+                            rxSNR.append(float(sub_wordlist2[13].replace("rxSNR=", "")))
+                        else:
+                            rxSNR.append(float(0))
                     
                 for f3 in range(15):
                     if log_lines[f-f3].find("bw=") > 0 and \
@@ -117,21 +120,22 @@ class App(tkinter.Tk):
             #     dc += 1       
         print(append_count)
         print(textmsg)
-        header = ['Request ID','Rx Time UTC' , 'Rx Timestamp', 'Sender', 'msg',\
+        header = ['Request ID','Rx Time UTC' , 'Rx Timestamp', 'Sender', 'Rx SNR',\
              'Total Payload Size (bytes)', 'Air Time (ms)', 'Hop Limit', 'Channel ID',\
-                 'Bandwidth (khZ)', 'Spreading Factor', 'Coding Rate', 'symLen (ms)']
+                 'Bandwidth (khZ)', 'Spreading Factor', 'Coding Rate', 'symLen (ms)', 'msg']
         # dt = datetime.datetime.now(pytz.timezone('Europe/Berlin'))    # import pytz for this
         dt = datetime.datetime.now()
         workDir = os.getcwd()
         fpath_write = Path(workDir + "/ProcessedLogs")
         fpath_write.mkdir(exist_ok=True)
-        with open(str(fpath_write) + "/SerialData_" + dt.strftime("%Y%m%d_%H%M%S") + ".csv", mode="w", newline = '\n') as dataFile:
+        with open(str(fpath_write) + "/SerialData_" + dt.strftime("%Y%m%d_%H%M%S") + \
+            ".csv", mode="w", newline = '\n', encoding="utf-8") as dataFile:
             writer = csv.writer(dataFile)
             writer.writerow(header)
             for wr in range(len(requestid)):
                 data_lines.append([requestid[wr], rxdatetime[wr], rxtimestampunix[wr], \
-                sender[wr], textmsg[wr], totalpayloadSize[wr], airtime[wr], hoplimit[wr], \
-                channelid[wr], bw[wr], sf[wr], cr[wr], symLen[wr]])
+                sender[wr], rxSNR[wr], totalpayloadSize[wr], airtime[wr], hoplimit[wr], \
+                channelid[wr], bw[wr], sf[wr], cr[wr], symLen[wr], textmsg[wr]])
             writer.writerows(data_lines)
 
 if __name__ == '__main__':
