@@ -59,12 +59,14 @@ class App(tkinter.Tk):
         global fpath
         #defaultSys = os.path.dirname(sys.modules['__main__'].__file__)
         # initialdir=defaultSys
+        # fpath = filedialog.askopenfilenames(title="Select file", 
+        #         filetypes=(("text files/ log files", "*.txt"), ("all files", "*.*")))
         fpath = filedialog.askopenfilenames(title="Select file", 
-                filetypes=(("text files", "*.txt"), ("all files", "*.*")))
+                filetypes=(("text files / log files", "*.txt .log"), ("all files", "*.*")))
 
     def processSerialLogs(self, fpath):
         # open file containing logs
-        logFile = open(fpath[0], mode="r")
+        logFile = open(fpath[0], mode="r", encoding="utf8", errors="ignore")
         rawLogs = logFile.readlines()
         logFile.close()
         print("File length is: " + str(len(rawLogs)) + " lines")
@@ -105,7 +107,7 @@ class App(tkinter.Tk):
                                         replace(",", "").split()  
                         bw.append(int(sub_wordlist3[3].replace("bw=", "")))
                         sf.append(int(sub_wordlist3[4].replace("sf=", "")))
-                        cr.append(int(sub_wordlist3[5].replace("cr=", ""))) 
+                        cr.append(sub_wordlist3[5].replace("cr=", ""))
                         symLen.append(sub_wordlist3[7].replace("symLen=", ""))
                         totalpayloadSize.append(int(sub_wordlist3[9].replace("payloadSize=", "")))
                         airtime.append(int(sub_wordlist3[11]))
@@ -123,7 +125,7 @@ class App(tkinter.Tk):
         workDir = os.getcwd()
         fpath_write = Path(workDir + "/ProcessedLogs")
         fpath_write.mkdir(exist_ok=True)
-        with open(str(fpath_write) + "/SerialData_" + dt.strftime("%Y%m%d_%H%M") + ".csv", mode="w", newline = '\n') as dataFile:
+        with open(str(fpath_write) + "/SerialData_" + dt.strftime("%Y%m%d_%H%M%S") + ".csv", mode="w", newline = '\n') as dataFile:
             writer = csv.writer(dataFile)
             writer.writerow(header)
             for wr in range(len(requestid)):
