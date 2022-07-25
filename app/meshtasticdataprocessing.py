@@ -5,12 +5,14 @@ import tkinter
 from tkinter import filedialog
 from tkinter import *
 import datetime
+import time
 from pathlib import Path
 import os, sys
 # lists and arrays declaration
 textmsg = []
 rxtimestampunix = []
 rxdatetime = []
+rxtime = []
 num = []
 whole_line = []
 data_lines = []
@@ -96,8 +98,10 @@ class App(tkinter.Tk):
                         channelid.append(int(sub_wordlist2[10].replace("Ch", ""), 0))
                         rxtimestampunix.append(int(sub_wordlist2[12].replace("rxtime=", "")))
                         # "\" operator indicates that the statement is continued in next line
-                        rxdatetime.append(datetime.datetime.fromtimestamp\
-                                    (rxtimestampunix[append_count], datetime.timezone.utc))
+                        rxdatetime.append(time.strftime("%d.%m.%Y %H:%M:%S", time.localtime\
+                            (rxtimestampunix[append_count])))
+                        rxtime.append(time.strftime("%H:%M:%S", time.localtime\
+                            (rxtimestampunix[append_count])))
                         if len(sub_wordlist2) == 14:
                             rxSNR.append(float(sub_wordlist2[13].replace("rxSNR=", "")))
                         else:
@@ -120,9 +124,9 @@ class App(tkinter.Tk):
             #     dc += 1       
         print(append_count)
         print(textmsg)
-        header = ['Request ID','Rx Time UTC' , 'Rx Timestamp', 'Sender', 'Rx SNR',\
+        header = ['Request ID','Rx Date-Time UTC' , 'Rx Time', 'Rx Timestamp', 'Sender', 'Rx SNR',\
              'Total Payload Size (bytes)', 'Air Time (ms)', 'Hop Limit', 'Channel ID',\
-                 'Bandwidth (khZ)', 'Spreading Factor', 'Coding Rate', 'symLen (ms)', 'msg']
+                 'Bandwidth (kHz)', 'Spreading Factor', 'Coding Rate', 'symLen (ms)', 'msg']
         # dt = datetime.datetime.now(pytz.timezone('Europe/Berlin'))    # import pytz for this
         dt = datetime.datetime.now()
         workDir = os.getcwd()
@@ -133,7 +137,7 @@ class App(tkinter.Tk):
             writer = csv.writer(dataFile)
             writer.writerow(header)
             for wr in range(len(requestid)):
-                data_lines.append([requestid[wr], rxdatetime[wr], rxtimestampunix[wr], \
+                data_lines.append([requestid[wr], rxdatetime[wr], rxtime[wr], rxtimestampunix[wr], \
                 sender[wr], rxSNR[wr], totalpayloadSize[wr], airtime[wr], hoplimit[wr], \
                 channelid[wr], bw[wr], sf[wr], cr[wr], symLen[wr], textmsg[wr]])
             writer.writerows(data_lines)
