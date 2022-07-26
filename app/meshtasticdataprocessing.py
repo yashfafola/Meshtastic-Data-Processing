@@ -68,7 +68,7 @@ class App(tkinter.Tk):
 
     def processSerialLogs(self, fpath):
         # open file containing logs
-        logFile = open(fpath[0], mode="r", encoding="utf-8", errors="ignore")
+        logFile = open(fpath[0], mode="r", encoding="utf-8")
         rawLogs = logFile.readlines()
         logFile.close()
         print("File length is: " + str(len(rawLogs)) + " lines")
@@ -107,9 +107,9 @@ class App(tkinter.Tk):
                         else:
                             rxSNR.append(float(0))
                     
-                for f3 in range(15):
+                for f3 in range(13):
                     if log_lines[f-f3].find("bw=") > 0 and \
-                    log_lines[f-f3].find(str(id[append_count])): 
+                    log_lines[f-f3].find(str(id[append_count])) > 0: 
                         sub_wordlist3 = log_lines[f-f3].replace("(", "").replace(")", "").\
                                         replace(",", "").split()  
                         bw.append(int(sub_wordlist3[3].replace("bw=", "")))
@@ -117,6 +117,7 @@ class App(tkinter.Tk):
                         cr.append(sub_wordlist3[5].replace("cr=", ""))
                         symLen.append(sub_wordlist3[7].replace("symLen=", ""))
                         totalpayloadSize.append(int(sub_wordlist3[9].replace("payloadSize=", "")))
+                        print(sub_wordlist3[9])
                         airtime.append(int(sub_wordlist3[11]))
                     
                 append_count += 1
