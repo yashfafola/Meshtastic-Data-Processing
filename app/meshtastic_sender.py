@@ -21,15 +21,14 @@ payload_length = 0
 automatic_test_mode = False     # default test mode
 send_interval = 0
 increment_bytes = 0
+
 #def onConnection(interface, topic=pub.AUTO_TOPIC): # called when we (re)connect to the radio
     # defaults to broadcast, specify a destination ID if you wish
     #interface.sendText("hello mesh")
 
 #pub.subscribe(onConnection, "meshtastic.connection.established")
 # By default will try to find a meshtastic device, otherwise provide a device path like /dev/ttyUSB0
-#interface = meshtastic.serial_interface.SerialInterface("COM6")
-
-#sched = BackgroundScheduler()
+interface = meshtastic.serial_interface.SerialInterface("COM6")
 
 # Create an instance of tkinter frame or window
 win = Tk()
@@ -54,7 +53,7 @@ def sendText(payload):
     dt = datetime.datetime.now()
     tx_time.append(dt.strftime("%H:%M:%S"))
     final_payload.append(tx_time[cnt] + " " + payload)
-    #interface.sendText(final_payload[cnt])
+    interface.sendText(final_payload[cnt])
     total_payload_size.append(20 + len(final_payload[cnt]))   # preamble length = 20 bytes
     print("counter ", cnt)
     print("payload ", final_payload[cnt])
@@ -82,8 +81,9 @@ def getPayloadIncrement():
     global increment_bytes, payload_length
     global increment_flag
     increment_bytes = int(payload_increment_entry.get())
-    payload_length = increment_bytes
-    increment_flag = True
+    if increment_bytes != 0:
+        payload_length = increment_bytes
+        increment_flag = True
 
 def getSendInterval():
     global send_interval    # seconds
@@ -95,16 +95,6 @@ def setAutomaticTestFlag():
     automatic_test_mode = True
     doAutomaticTest()
     
-# s = sched.scheduler(time.time, time.sleep)
-# def do_something(sc): 
-#     print("Doing stuff...")
-#     # do your stuff
-#     print(automatic_test_mode)
-#     s.enter(60, 1, do_something, (sc,))
-
-# s.enter(60, 1, do_something, (s,))
-# s.run()
-
 def clearAutomaticTestFlag():
     global automatic_test_mode
     automatic_test_mode = False
@@ -188,6 +178,7 @@ stopTestButton = Button(win, text= "Stop Automatic Test", activeforeground='whit
                 command = clearAutomaticTestFlag)
 stopTestButton.place(x = 320, y = 150)
 
+Label(win, text="---OR---").place(x = 230, y = 10)
 
 # quit gui
 QuitButton = Button(win, text="Quit", activeforeground='white', activebackground='#46403E', 
