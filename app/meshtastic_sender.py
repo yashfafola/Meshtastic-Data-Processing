@@ -50,9 +50,9 @@ def getRandomString(length):
 def sendText(payload):
     global dt, cnt
     # get date and time to record Tx timestamp
+    final_payload.append(str(cnt) + ": " + payload)
     dt = datetime.datetime.now()
     tx_time.append(dt.strftime("%H:%M:%S"))
-    final_payload.append(str(cnt) + ": " + payload)
     interface.sendText(final_payload[cnt])
     total_payload_size.append(20 + len(final_payload[cnt]))   # preamble length = 20 bytes
     print("counter ", cnt)
@@ -63,7 +63,7 @@ def TxCSV(tx_time, total_payload_size, final_payload, dt):
     workDir = os.getcwd()
     fpath_write = Path(workDir + "/ProcessedLogs")
     fpath_write.mkdir(exist_ok=True)
-    header = ["Tx Time (timezone)", "msg", "Total Payload Size (bytes)"]
+    header = ["Tx Time (timezone)", "Total Payload Size (bytes)", "Payload"]
     print(len(tx_time))
     with open(str(fpath_write) + "/TxData_IN_" + dt.strftime("%Y%m%d_%H%M%S") + \
             ".csv", mode="w", newline = '\n', encoding="utf-8") as TxDataFile:
