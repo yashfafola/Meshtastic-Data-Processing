@@ -28,7 +28,7 @@ increment_bytes = 0
 
 #pub.subscribe(onConnection, "meshtastic.connection.established")
 # By default will try to find a meshtastic device, otherwise provide a device path like /dev/ttyUSB0
-interface = meshtastic.serial_interface.SerialInterface("COM6")
+interface = meshtastic.serial_interface.SerialInterface()
 
 # Create an instance of tkinter frame or window
 win = Tk()
