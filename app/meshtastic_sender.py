@@ -52,11 +52,11 @@ def sendText(payload):
     # get date and time to record Tx timestamp
     dt = datetime.datetime.now()
     tx_time.append(dt.strftime("%H:%M:%S"))
-    final_payload.append(payload)
+    final_payload.append(str(cnt) + ": " + payload)
     interface.sendText(final_payload[cnt])
     total_payload_size.append(20 + len(final_payload[cnt]))   # preamble length = 20 bytes
     print("counter ", cnt)
-    print("payload ", final_payload[cnt])
+    print("total payload Size", total_payload_size[cnt])
     cnt += 1
  
 
@@ -110,8 +110,10 @@ def doAutomaticTest():
     letters = string.printable
     result_str = ''.join(random.choice(letters) for l in range(payload_length))
     sendText(result_str)
-    if (payload_length + increment_bytes) < 236:
+    if (total_payload_size[cnt-1]) < 256:
         payload_length = payload_length + increment_bytes
+    else:
+        clearAutomaticTestFlag()
     print("sent")
     print("flag status ", automatic_test_mode)
     Timer(send_interval, doAutomaticTest).start()
