@@ -42,8 +42,8 @@ def getPayloadLength():
 
 def getRandomString(length):
         global result_str
-        # choose from all ascii letters
-        letters = string.printable
+        # choose from all lowercase and uppercase alphabets
+        letters = string.ascii_letters
         result_str = ''.join(random.choice(letters) for l in range(length))
         #print("Random string of length", length, "is:", result_str)
 
@@ -59,7 +59,6 @@ def sendText(payload):
     print("total payload Size", total_payload_size[cnt])
     cnt += 1
  
-
 def TxCSV(tx_time, total_payload_size, final_payload, dt):
     workDir = os.getcwd()
     fpath_write = Path(workDir + "/ProcessedLogs")
@@ -88,7 +87,6 @@ def getPayloadIncrement():
 def getSendInterval():
     global send_interval    # seconds
     send_interval = int(send_interval_entry.get())
-    print("Send Interval", send_interval)
 
 def setAutomaticTestFlag():
     global automatic_test_mode
@@ -100,22 +98,23 @@ def clearAutomaticTestFlag():
     automatic_test_mode = False
 
 def doAutomaticTest():
-    # choose from all ascii letters
     global payload_length
     if not automatic_test_mode:
         Timer(send_interval, doAutomaticTest).cancel()
         print("stoppped timer")
         return
     print("send Interval", send_interval)
-    letters = string.printable
+    # choose from all lowercase and uppercase alphabets
+    letters = string.ascii_letters
     result_str = ''.join(random.choice(letters) for l in range(payload_length))
-    sendText(result_str)
-    if (total_payload_size[cnt-1]) < 256:
+    print("payload length: ", payload_length)
+    # prevent increment next payload size when the limit is reached
+    if (payload_length + increment_bytes) < 233:      # max 237, -3 bytes for seq, -1  for safe tx
         payload_length = payload_length + increment_bytes
     else:
         clearAutomaticTestFlag()
+    sendText(result_str)
     print("sent")
-    print("flag status ", automatic_test_mode)
     Timer(send_interval, doAutomaticTest).start()
         
 # Create an Entry widget to accept User Input
@@ -145,7 +144,7 @@ sendTextButton = Button(win, text= "Send Text", activeforeground='white', image 
 sendTextButton.place(x = 10, y = 100)
 
 # Create a Button to create CSV and record Tx Data
-CSVButton = Button(win, text= "Create CSV", activeforeground='white', image = pixel, 
+CSVButton = Button(win, text= "Create CSV", bg='#1DF12A', activeforeground='white', image = pixel, 
                 width = 100, height = 13, compound="c", activebackground='#46403E', 
                 command = lambda:TxCSV(tx_time, total_payload_size, final_payload, dt))
 CSVButton.place(x = 10, y = 130)
