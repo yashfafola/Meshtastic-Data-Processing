@@ -109,7 +109,8 @@ def doAutomaticTest():
     result_str = ''.join(random.choice(letters) for l in range(payload_length))
     print("payload length: ", payload_length)
     # prevent increment next payload size when the limit is reached
-    if (payload_length + increment_bytes) < 233:      # max 237, -3 bytes for seq, -1  for safe tx
+    if (payload_length + increment_bytes) < 232:      # max 237, -4 bytes ("10: ")
+                                                      # -1  for safe tx
         payload_length = payload_length + increment_bytes
     else:
         clearAutomaticTestFlag()
