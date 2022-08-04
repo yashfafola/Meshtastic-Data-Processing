@@ -11,6 +11,8 @@ import os
 from pathlib import Path
 import csv
 from threading import Timer
+import subprocess
+from subprocess import PIPE, TimeoutExpired
 
 tx_time = []
 final_payload = []
@@ -28,7 +30,7 @@ increment_bytes = 0
 
 #pub.subscribe(onConnection, "meshtastic.connection.established")
 # By default will try to find a meshtastic device, otherwise provide a device path like /dev/ttyUSB0
-interface = meshtastic.serial_interface.SerialInterface()
+#interface = meshtastic.serial_interface.SerialInterface()
 
 # Create an instance of tkinter frame or window
 win = Tk()
@@ -53,7 +55,26 @@ def sendText(payload):
     final_payload.append(str(cnt) + ": " + payload)
     dt = datetime.datetime.now()
     tx_time.append(dt.strftime("%H:%M:%S"))
-    interface.sendText(final_payload[cnt])
+    process_sendtext = subprocess.Popen("meshtastic --sendtext \"" + final_payload[cnt] + "\"", stdin=None, \
+            stdout=PIPE, universal_newlines=True, shell=True)
+    try:
+        pipeout, pipeerr = process_sendtext.communicate(timeout=15)
+        pipeout_str = str(pipeout)
+        pipeerr_str = str(pipeerr)
+        print("Output of meshtastic cmd send--> " + pipeout_str)
+        if pipeerr_str != "None":
+                print("Error running meshtastic --sendtext shell command: " + pipeerr_str)
+    except TimeoutExpired:
+        process_sendtext.kill()
+        pipeout, pipeerr = process_sendtext.communicate()
+        pipeout_str = str(pipeout)
+        pipeerr_str = str(pipeerr)
+        print(pipeout_str)
+        if pipeerr_str != None:
+                print("Timeout!--> Error running meshtastic --sendtext shell command: " + \
+                    pipeerr_str)
+        print("Killed the meshtastic --sendtext process, because of timeout")
+    #interface.sendText(final_payload[cnt])
     total_payload_size.append(20 + len(final_payload[cnt]))   # preamble length = 20 bytes
     print("counter ", cnt)
     print("total payload Size", total_payload_size[cnt])
