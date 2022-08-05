@@ -17,6 +17,7 @@ from subprocess import PIPE, TimeoutExpired
 tx_time = []
 final_payload = []
 total_payload_size = []
+serial_number = []
 data_lines = []
 cnt = 0
 payload_length = 0
@@ -52,7 +53,8 @@ def getRandomString(length):
 def sendText(payload):
     global dt, cnt
     # get date and time to record Tx timestamp
-    final_payload.append(str(cnt) + ": " + payload)
+    #final_payload.append(str(cnt) + ": " + payload)
+    final_payload.append(payload)
     dt = datetime.datetime.now()
     tx_time.append(dt.strftime("%H:%M:%S"))
     process_sendtext = subprocess.Popen("meshtastic --sendtext \"" + final_payload[cnt] + "\"", stdin=None, \
@@ -76,6 +78,7 @@ def sendText(payload):
         print("Killed the meshtastic --sendtext process, because of timeout")
     #interface.sendText(final_payload[cnt])
     total_payload_size.append(20 + len(final_payload[cnt]))   # preamble length = 20 bytes
+    serial_number.append(cnt+1)
     print("counter ", cnt)
     print("total payload Size", total_payload_size[cnt])
     cnt += 1
@@ -84,18 +87,17 @@ def TxCSV(tx_time, total_payload_size, final_payload, dt):
     workDir = os.getcwd()
     fpath_write = Path(workDir + "/ProcessedLogs")
     fpath_write.mkdir(exist_ok=True)
-    header = ["Tx Time (timezone)", "Total Payload Size (bytes)", "Payload"]
+    header = ["Serial Number" ,"Tx Time (timezone)", "Total Payload Size (bytes)", "Payload"]
     print(len(tx_time))
     with open(str(fpath_write) + "/TxData_IN_" + dt.strftime("%Y%m%d_%H%M%S") + \
             ".csv", mode="w", newline = '\n', encoding="utf-8") as TxDataFile:
         writer = csv.writer(TxDataFile)
         writer.writerow(header)
         for w in range(len(tx_time)):
-            print(w)
-            data_lines.append([tx_time[w], total_payload_size[w], final_payload[w]]) 
+            data_lines.append([serial_number[w] ,tx_time[w], total_payload_size[w], final_payload[w]]) 
         writer.writerows(data_lines)
     print("counter=", cnt)
-    print("***Created CSV***")
+    print("___Created CSV___")
 
 def getPayloadIncrement():
     global increment_bytes, payload_length
