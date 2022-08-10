@@ -131,6 +131,7 @@ def sendText(payload):
     serial_number.append(cnt+1)
     print("counter ", cnt)
     print("total payload Size", total_payload_size[cnt])
+    print("Tx Time: ", tx_time[cnt])
     cnt += 1
  
 def TxCSV(tx_time, total_payload_size, final_payload, dt):
@@ -191,7 +192,7 @@ def doAutomaticTest():
     else:
         clearAutomaticTestFlag()
     sendText(result_str)
-    print("sent")
+    print("--- Paket Sent ---")
     Timer(send_interval, doAutomaticTest).start()
         
 # Create an Entry widget to accept User Input
@@ -224,7 +225,7 @@ sendTextButton.place(x = 10, y = 100)
 CSVButton = Button(win, text= "Create CSV", bg='#1DF12A', activeforeground='white', image = pixel, 
                 width = 100, height = 13, compound="c", activebackground='#46403E', 
                 command = lambda:TxCSV(tx_time, total_payload_size, final_payload, dt))
-CSVButton.place(x = 10, y = 130)
+CSVButton.place(x = 200, y = 240)
 
 # Create an payload increment Entry widget to accept User Input
 Label(win, text="Enter payload increment bytes").place(x = 320, y = 10)
@@ -251,7 +252,7 @@ startTestButton = Button(win, text= "Start Automatic Test", activeforeground='wh
 startTestButton.place(x = 320, y = 120)
 
 # Create a Button to stop Automatic Test Mode 
-stopTestButton = Button(win, text= "Stop Automatic Test", bg='#F92218', activeforeground='white', 
+stopTestButton = Button(win, text= "Stop Automatic Test", bg='#F6AFA0', activeforeground='white', 
                 image = pixel, width = 150, height = 13, compound="c", activebackground='#46403E', 
                 command = clearAutomaticTestFlag)
 stopTestButton.place(x = 320, y = 150)
@@ -261,7 +262,7 @@ Label(win, text="---OR---").place(x = 230, y = 10)
 # quit gui
 QuitButton = Button(win, text="Quit", activeforeground='white', activebackground='#46403E', 
                     command = win.destroy)
-QuitButton.place(x = 230, y = 250)
+QuitButton.place(x = 235, y = 270)
 
 
 win.mainloop()
