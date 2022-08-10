@@ -1,3 +1,4 @@
+from struct import pack
 import meshtastic
 import meshtastic.serial_interface
 from pubsub import pub
@@ -13,8 +14,10 @@ import csv
 from threading import Timer
 import subprocess
 from subprocess import PIPE, TimeoutExpired
+from dotmap import DotMap
 
 tx_time = []
+rx_time = []
 final_payload = []
 total_payload_size = []
 serial_number = []
@@ -24,19 +27,64 @@ payload_length = 0
 automatic_test_mode = False     # default test mode
 send_interval = 0
 increment_bytes = 0
-
+ACK_Flag = False
+ack_count = 0
+ack_payload = []
+ack_SrNo = []
+ack_data_lines = []
+ack_payload_size = []
 #def onConnection(interface, topic=pub.AUTO_TOPIC): # called when we (re)connect to the radio
     # defaults to broadcast, specify a destination ID if you wish
     #interface.sendText("hello mesh")
 
 #pub.subscribe(onConnection, "meshtastic.connection.established")
 # By default will try to find a meshtastic device, otherwise provide a device path like /dev/ttyUSB0
-#interface = meshtastic.serial_interface.SerialInterface()
+interface = meshtastic.serial_interface.SerialInterface()
+
+#"""A list of all packets we received while the current test was running"""
+# To send acknowledgement as a reply to a sender when received TEXT_MESSAGE_APP
+receivedPackets = None
+
+testsRunning = False
+
+testNumber = 0
+
+sendingInterface = None
 
 # Create an instance of tkinter frame or window
 win = Tk()
 win.title("Meshtastic Sender")
 win.geometry('500x300')
+
+def onReceive(packet, interface):
+    global dt
+    """Callback invoked when a packet arrives"""
+    if sendingInterface == interface:
+        pass
+        # print("Ignoring sending interface")
+    else:
+        # print(f"From {interface.stream.port}: {packet}")
+        p = DotMap(packet)
+
+        if p.decoded.portnum == "TEXT_MESSAGE_APP":
+            # We only care a about clear text packets
+            dt = datetime.datetime.now()
+            rx_time.append(dt.strftime("%H:%M:%S"))
+            #ACK_Flag = True
+            sendACK()
+            if receivedPackets is not None:
+                receivedPackets.append(p)
+            #print(f"Received: {packet}")
+            print("Time: ", rx_time)
+pub.subscribe(onReceive, "meshtastic.receive")
+
+def sendACK():
+    global ack_count
+    ack_payload.append("ACK " + str(ack_count))
+    interface.sendText(ack_payload[ack_count])
+    ack_SrNo.append(ack_count+1)
+    ack_payload_size.append(20 + len(ack_payload[cnt]))   # preamble length = 20 bytes
+    ack_count += 1
 
 def getPayloadLength():
         global payload_length
@@ -53,11 +101,12 @@ def getRandomString(length):
 def sendText(payload):
     global dt, cnt
     # get date and time to record Tx timestamp
-    #final_payload.append(str(cnt) + ": " + payload)
     final_payload.append(payload)
     dt = datetime.datetime.now()
     tx_time.append(dt.strftime("%H:%M:%S"))
-    process_sendtext = subprocess.Popen("meshtastic --sendtext \"" + final_payload[cnt] + "\"", stdin=None, \
+    # Use this to allow app remain connected to radio via bluetooth
+    # When receive event is active, this code section should not be used.
+    """ process_sendtext = subprocess.Popen("meshtastic --sendtext \"" + final_payload[cnt] + "\"", stdin=None, \
             stdout=PIPE, universal_newlines=True, shell=True)
     try:
         pipeout, pipeerr = process_sendtext.communicate(timeout=15)
@@ -75,8 +124,9 @@ def sendText(payload):
         if pipeerr_str != None:
                 print("Timeout!--> Error running meshtastic --sendtext shell command: " + \
                     pipeerr_str)
-        print("Killed the meshtastic --sendtext process, because of timeout")
-    #interface.sendText(final_payload[cnt])
+        print("Killed the meshtastic --sendtext process, because of timeout") """
+    # Use this to allow only serial interface (bluetooth connection will not be available)
+    interface.sendText(final_payload[cnt])
     total_payload_size.append(20 + len(final_payload[cnt]))   # preamble length = 20 bytes
     serial_number.append(cnt+1)
     print("counter ", cnt)
@@ -88,16 +138,19 @@ def TxCSV(tx_time, total_payload_size, final_payload, dt):
     fpath_write = Path(workDir + "/ProcessedLogs")
     fpath_write.mkdir(exist_ok=True)
     header = ["Serial Number" ,"Tx Time (timezone)", "Total Payload Size (bytes)", "Payload"]
-    print(len(tx_time))
+    #print(len(tx_time))
     with open(str(fpath_write) + "/TxData_IN_" + dt.strftime("%Y%m%d_%H%M%S") + \
             ".csv", mode="w", newline = '\n', encoding="utf-8") as TxDataFile:
         writer = csv.writer(TxDataFile)
         writer.writerow(header)
         for w in range(len(tx_time)):
-            data_lines.append([serial_number[w] ,tx_time[w], total_payload_size[w], final_payload[w]]) 
+            data_lines.append([serial_number[w], tx_time[w], total_payload_size[w], final_payload[w]]) 
         writer.writerows(data_lines)
+        for wack in range(len(rx_time)):
+            ack_data_lines.append([ack_SrNo[wack], rx_time[wack], "", ack_payload[wack]])
+        writer.writerows(ack_data_lines)
     print("counter=", cnt)
-    print("___Created CSV___")
+    print("---Created CSV---")
 
 def getPayloadIncrement():
     global increment_bytes, payload_length
@@ -198,8 +251,8 @@ startTestButton = Button(win, text= "Start Automatic Test", activeforeground='wh
 startTestButton.place(x = 320, y = 120)
 
 # Create a Button to stop Automatic Test Mode 
-stopTestButton = Button(win, text= "Stop Automatic Test", activeforeground='white', image = pixel, 
-                width = 150, height = 13, compound="c", activebackground='#46403E', 
+stopTestButton = Button(win, text= "Stop Automatic Test", bg='#F92218', activeforeground='white', 
+                image = pixel, width = 150, height = 13, compound="c", activebackground='#46403E', 
                 command = clearAutomaticTestFlag)
 stopTestButton.place(x = 320, y = 150)
 
