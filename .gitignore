@@ -1,2 +1,6 @@
 .venv
 Logs
+ProcessedLogs
+codetrials.py
+meshtastictx.py
+example.py
