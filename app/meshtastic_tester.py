@@ -75,28 +75,38 @@ def onReceive(packet, interface):
             if receivedPackets is not None:
                 receivedPackets.append(p)
             #print(f"Received: {packet}")
-            print("Time: ", rx_time)
+
 pub.subscribe(onReceive, "meshtastic.receive")
 
+# send acknowledgement to LoRa channel upon receiving message to this device
 def sendACK():
     global ack_count
     ack_payload.append("ACK " + str(ack_count))
     interface.sendText(ack_payload[ack_count])
     ack_SrNo.append(ack_count+1)
-    ack_payload_size.append(20 + len(ack_payload[cnt]))   # preamble length = 20 bytes
+    ack_payload_size.append(20 + len(ack_payload[ack_count]))   # preamble length = 20 bytes
+    print("Rx Time: ", rx_time[ack_count])
     ack_count += 1
 
+# get payloadsize from user input
 def getPayloadLength():
         global payload_length
         #payload_length_entry = 0
         payload_length = int(payload_length_entry.get())
 
+# generate random string from a user input payloadsize
 def getRandomString(length):
         global result_str
         # choose from all lowercase and uppercase alphabets
         letters = string.ascii_letters
         result_str = ''.join(random.choice(letters) for l in range(length))
         #print("Random string of length", length, "is:", result_str)
+
+# user input message
+def getUserMessage():
+        global result_str
+        #payload_length_entry = 0
+        result_str = str(user_message_entry.get())
 
 def sendText(payload):
     global dt, cnt
@@ -214,12 +224,21 @@ generatePayloadButton = Button(win, text= "Generate String", activeforeground='w
                 command = lambda:getRandomString(payload_length))
 generatePayloadButton.place(x = 150, y = 60)
 
+# User input message Button
+Label(win, text="User input message: ").place(x = 10, y = 90)
+user_message_entry = Entry(win, width = 32)
+user_message_entry.place(x = 10, y = 110)
+userPayloadButton = Button(win, text= "Set", activeforeground='white', image = pixel, 
+                width = 30, height = 13, compound="c", activebackground='#46403E', 
+                command = getUserMessage)
+userPayloadButton.place(x = 220, y = 110)
+
 # Send Text using generated string
 # Create a Button to send Text over lora mesh via mehstastic
-sendTextButton = Button(win, text= "Send Text", activeforeground='white', image = pixel, 
+sendTextButton = Button(win, text= "Send Text", bg='#A7FAA0', activeforeground='white', image = pixel, 
                 width = 100, height = 13, compound="c", activebackground='#46403E', 
                 command = lambda:sendText(result_str))
-sendTextButton.place(x = 10, y = 100)
+sendTextButton.place(x = 10, y = 140)
 
 # Create a Button to create CSV and record Tx Data
 CSVButton = Button(win, text= "Create CSV", bg='#1DF12A', activeforeground='white', image = pixel, 
