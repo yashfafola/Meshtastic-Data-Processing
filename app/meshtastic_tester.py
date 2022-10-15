@@ -24,15 +24,20 @@ serial_number = []
 data_lines = []
 cnt = 0
 payload_length = 0
-automatic_test_mode = False     # default test mode
 send_interval = 0
 increment_bytes = 0
-ACK_Flag = False
+payload_increment = 0
 ack_count = 0
 ack_payload = []
 ack_SrNo = []
 ack_data_lines = []
 ack_payload_size = []
+
+# define Flags
+repeate_test_flag = False
+ACK_Flag = False
+automatic_test_mode = False     # default test mode
+
 #def onConnection(interface, topic=pub.AUTO_TOPIC): # called when we (re)connect to the radio
     # defaults to broadcast, specify a destination ID if you wish
     #interface.sendText("hello mesh")
@@ -53,7 +58,7 @@ sendingInterface = None
 
 # Create an instance of tkinter frame or window
 win = Tk()
-win.title("Meshtastic Sender")
+win.title("Meshtastic Tester")
 win.geometry('500x300')
 
 def onReceive(packet, interface):
@@ -113,7 +118,9 @@ def sendText(payload):
     # get date and time to record Tx timestamp
     final_payload.append(payload)
     dt = datetime.datetime.now()
-    tx_time.append(dt.strftime("%H:%M:%S"))
+    # generate time strings and append
+    # %f is for microseconds, :-3 trims last 3 digits from it to give milliseconds
+    tx_time.append(dt.strftime("%H:%M:%S.%f")[:-3])
     # Use this to allow app remain connected to radio via bluetooth
     # When receive event is active, this code section should not be used.
     """ process_sendtext = subprocess.Popen("meshtastic --sendtext \"" + final_payload[cnt] + "\"", stdin=None, \
@@ -148,9 +155,9 @@ def TxCSV(tx_time, total_payload_size, final_payload, dt):
     workDir = os.getcwd()
     fpath_write = Path(workDir + "/ProcessedLogs")
     fpath_write.mkdir(exist_ok=True)
-    header = ["Serial Number" ,"Tx Time (timezone)", "Total Payload Size (bytes)", "Payload"]
+    header = ["Serial Number" ,"Tx Time (timezone)", "Total Payload Size (bytes)", "Payload Tx"]
     #print(len(tx_time))
-    with open(str(fpath_write) + "/TxData_IN_" + dt.strftime("%Y%m%d_%H%M%S") + \
+    with open(str(fpath_write) + "/TxData_" + dt.strftime("%Y%m%d_%H%M%S") + \
             ".csv", mode="w", newline = '\n', encoding="utf-8") as TxDataFile:
         writer = csv.writer(TxDataFile)
         writer.writerow(header)
@@ -196,15 +203,23 @@ def doAutomaticTest():
     result_str = ''.join(random.choice(letters) for l in range(payload_length))
     print("payload length: ", payload_length)
     # prevent increment next payload size when the limit is reached
-    if (payload_length + increment_bytes) < 232:      # max 237, -4 bytes ("10: ")
-                                                      # -1  for safe tx
+    # max 237, -4 bytes ("10: "); -1  for safe tx
+    if (payload_length + increment_bytes) < 232:                                                       
         payload_length = payload_length + increment_bytes
+    elif (payload_length + increment_bytes) > 232 and repeate_test_flag:
+        payload_length =  int(payload_length_entry.get())
     else:
         clearAutomaticTestFlag()
     sendText(result_str)
     print("--- Paket Sent ---")
     Timer(send_interval, doAutomaticTest).start()
-        
+
+retest_var = BooleanVar()
+# Repeate payload size increment test function
+def repeatTest():  
+    global repeate_test_flag 
+    repeate_test_flag = retest_var.get()
+
 # Create an Entry widget to accept User Input
 Label(win, text="Enter Payload Length").place(x = 10, y = 10)
 payload_length_entry = Entry(win, width = 5)
@@ -264,19 +279,25 @@ sendIntervalButton = Button(win, text= "Set", activeforeground='white', image = 
                 height = 13, compound="c", activebackground='#46403E', command = getSendInterval)
 sendIntervalButton.place(x = 440, y = 90)
 
+# Repeate payload size increment test button
+repeatTestRadioButton = Radiobutton(win, text= "Repeat increment test", variable = retest_var,
+                        value = True, command = repeatTest)
+repeatTestRadioButton.place(x = 300, y = 120)
+
 # Create a Button to send Text in Automatic Test Mode over lora mesh via mehstastic
 startTestButton = Button(win, text= "Start Automatic Test", activeforeground='white', image = pixel, 
                 width = 150, height = 13, compound="c", activebackground='#46403E', 
                 command = setAutomaticTestFlag)
-startTestButton.place(x = 320, y = 120)
+startTestButton.place(x = 320, y = 150)
 
 # Create a Button to stop Automatic Test Mode 
 stopTestButton = Button(win, text= "Stop Automatic Test", bg='#F6AFA0', activeforeground='white', 
                 image = pixel, width = 150, height = 13, compound="c", activebackground='#46403E', 
                 command = clearAutomaticTestFlag)
-stopTestButton.place(x = 320, y = 150)
+stopTestButton.place(x = 320, y = 180)
 
-Label(win, text="---OR---").place(x = 230, y = 10)
+# Either/OR operation for certain fucntions (now resolved)
+#Label(win, text="---OR---").place(x = 230, y = 10)
 
 # quit gui
 QuitButton = Button(win, text="Quit", activeforeground='white', activebackground='#46403E', 
